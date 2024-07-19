@@ -44,6 +44,33 @@
             }
         }
 
+        function drawAnimationFromPoints(points, thickness = 1, color = "#000", milliseconds = 1000) {
+            let pointsPerMillisec = points.length / milliseconds;
+            let millisecsToSleep;
+
+            if (pointsPerMillisec >= 1) {
+                millisecsToSleep = 1;
+            }
+
+            if (pointsPerMillisec < 1) {
+                pointsPerMillisec = 1;
+                millisecsToSleep = milliseconds / points.length;
+            }
+            
+            let curLastPoint = 0;
+
+            let interv = setInterval(() => {
+                // console.log("drawing", pointsPerMillisec, millisecsToSleep)
+                const arr = points.slice(curLastPoint, curLastPoint + pointsPerMillisec);
+                curLastPoint += pointsPerMillisec;
+                if (arr.length == 0) {
+                    clearInterval(interv);
+                    return
+                }
+                drawFromPoints(arr)
+            }, millisecsToSleep)
+        }
+
         function drawCircle(ctx, x, y, radius, fill, stroke, strokeWidth) {
             ctx.beginPath()
             ctx.arc(x, y, radius, 0, 2 * Math.PI, false)
@@ -62,7 +89,7 @@
             const newP = {x : e.x, y : e.y};
             try{
                 const prevP = supportPointsPositions.at(-1);
-                drawBezierFromSupportPoints([newP, prevP], 0.5, "#a00");
+                drawBezierFromSupportPoints([newP, prevP], 0.5, "#a00", false);
                 // redraw so line is not on top of point
                 drawCircle(ctx, prevP.x, prevP.y, 10, "#000000")
 
@@ -84,10 +111,9 @@
             nex.push(1);
 
             return nex;
-
         }
 
-        function drawBezierFromSupportPoints(supportPoints, thickness = 2, color="#000") {
+        function drawBezierFromSupportPoints(supportPoints, thickness = 2, color="#000", animate = true) {
             if (supportPoints.length == 0) {
                 return;
             }
@@ -123,7 +149,11 @@
 
                 points.push({x : nextX, y: nextY});
             }
-            drawFromPoints(points, thickness, color);
+            if (animate) {
+                drawAnimationFromPoints(points, thickness, color, 500);
+            } else {
+                drawFromPoints(points, thickness, color);
+            }
         }
 
         function handleButtonClick(event) {
