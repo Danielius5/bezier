@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bezier Curves</title>
+    <style>
+        html, body {
+            height:100%;
+            padding:0;
+            margin:0;
+            overflow:hidden
+        }
+        #wrapper {
+            width: 100%;
+            height:100%;          
+        }
+        /* #canvas {
+            width: 100%;
+            height:100%;
+        } */
+    </style>
+</head>
+<body>    
+    <div id="wrapper">
+        <canvas id="canvas" onclick="handleOnClick(event)">
+        Your browser does not support the canvas tag.
+        </canvas>
+    </div>
+    <script>
+        const c = document.getElementById("canvas");
+        const canvasWrapperRect = document.getElementById('wrapper').getBoundingClientRect();
+        const ctx = c.getContext("2d");
+        c.height  = canvasWrapperRect.height;
+        c.width  = canvasWrapperRect.width;
+
+        let supportPointsPositions = [];
+
+        function drawFromPoints(points) {
+            for(const point of points) {
+                drawCircle(ctx, point.x, point.y, 1, "#000000");
+            }
+        }
+        function drawCircle(ctx, x, y, radius, fill, stroke, strokeWidth) {
+            ctx.beginPath()
+            ctx.arc(x, y, radius, 0, 2 * Math.PI, false)
+            if (fill) {
+                ctx.fillStyle = fill
+                ctx.fill()
+            }
+            if (stroke) {
+                ctx.lineWidth = strokeWidth
+                ctx.strokeStyle = stroke
+                ctx.stroke()
+            }
+        }
+
+        function approxEqual(n, m) {
+            return Math.abs(n - m) < 1; // what if never equal??
+        }
+
+        function euclideanDist(p1, p2) {
+            const diffX = Math.abs(p1.x - p2.x)
+            const diffY = Math.abs(p1.y - p2.y)
+
+            return Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2));
+        }
+
+        // t = 1 / longest distance between points
+        function drawBezierLine(p1, p2) {
+            if (p1 == undefined || p2 == undefined) {
+                return;
+            }
+            const diffX = p2.x - p1.x;
+            const diffY = p2.y - p1.y;
+            const maxDiff = Math.max(Math.abs(diffX), Math.abs(diffY));
+
+            const incX = diffX / maxDiff;
+            const incY = diffY / maxDiff;
+
+            let p = {x : p1.x, y: p1.y}
+            let points = [];
+            let i = 0;
+
+            while(!approxEqual(euclideanDist(p, p2), 0) && i < 500000) {
+                points.push({x: p.x, y: p.y});
+                p.x += incX;
+                p.y += incY;
+                i++;
+            }
+            
+            console.log(points)
+            drawFromPoints(points);
+        }
+
+        function handleOnClick(e) {
+            drawCircle(ctx, e.x, e.y, 10, "#000000")
+            const newP = {x : e.x, y : e.y};
+            drawBezierLine(newP, supportPointsPositions.at(-1));
+            console.log(supportPointsPositions.at(-1), newP)
+            supportPointsPositions.push(newP)
+        }
+
+        // drawBezierLine({x : 295, y: 153}, {x : 297, y : 443})
+        ctx.strokeStyle = "#000000";
+        ctx.fillStyle = "#000000";
+        
+
+    </script>
+    
+</body>
+</html>
