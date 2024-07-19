@@ -21,7 +21,8 @@
 </head>
 <body>    
     <div id="wrapper">
-        <canvas id="canvas" onclick="handleOnClick(event)">
+        <button onclick="handleButtonClick(event)">Draw Bezier</button>
+        <canvas id="canvas" onclick="handleOnCanvasClick(event)">
         Your browser does not support the canvas tag.
         </canvas>
     </div>
@@ -32,11 +33,15 @@
         c.height  = canvasWrapperRect.height;
         c.width  = canvasWrapperRect.width;
 
+        // drawBezierLine({x : 295, y: 153}, {x : 297, y : 443})
+        ctx.strokeStyle = "#000000";
+        ctx.fillStyle = "#000000";
+
         let supportPointsPositions = [];
 
-        function drawFromPoints(points) {
+        function drawFromPoints(points, thickness = 1) {
             for(const point of points) {
-                drawCircle(ctx, point.x, point.y, 1, "#000000");
+                drawCircle(ctx, point.x, point.y, thickness, "#000000");
             }
         }
         function drawCircle(ctx, x, y, radius, fill, stroke, strokeWidth) {
@@ -78,7 +83,7 @@
 
             let p = {x : p1.x, y: p1.y}
             let points = [];
-            let i = 0;
+            let i = 0; // get rid of this
 
             while(!approxEqual(euclideanDist(p, p2), 0) && i < 500000) {
                 points.push({x: p.x, y: p.y});
@@ -91,18 +96,73 @@
             drawFromPoints(points);
         }
 
-        function handleOnClick(e) {
+        function handleOnCanvasClick(e) {
             drawCircle(ctx, e.x, e.y, 10, "#000000")
             const newP = {x : e.x, y : e.y};
             drawBezierLine(newP, supportPointsPositions.at(-1));
-            console.log(supportPointsPositions.at(-1), newP)
+
             supportPointsPositions.push(newP)
         }
 
-        // drawBezierLine({x : 295, y: 153}, {x : 297, y : 443})
-        ctx.strokeStyle = "#000000";
-        ctx.fillStyle = "#000000";
-        
+        function getBinomialCoefs(n) {
+            if (n == 2) {
+                return [1, 1]
+            }
+            const prev = getBinomialCoefs(n - 1);
+
+            let nex = [1];
+            for (let i = 1; i < n - 1; i++) {
+                nex.push(prev[i - 1] + prev[i]);
+            }
+            nex.push(1);
+
+            return nex;
+
+        }
+
+        function drawBezierFromSupportPoints(supportPoints) {
+            if (supportPoints.length == 0) {
+                return;
+            }
+
+            // increment of t = 1 / biggest difference between basier curve points components (x, y)
+            let diff = 0;
+            for(let i = 1; i < supportPoints.length; i++) {
+                diff = Math.max(
+                    diff, 
+                    Math.abs(supportPoints[i - 1].x - supportPoints[i].x),
+                    Math.abs(supportPoints[i - 1].y - supportPoints[i].y),
+                );
+            }
+
+            let incr = 1 / diff / supportPoints.length;
+
+
+            let coefs = getBinomialCoefs(supportPoints.length)
+            console.log(coefs);
+            let points = [];
+
+
+            for(let t = 0; t <= 1; t += incr) {
+                let nextX = 0;
+                let nextY = 0;
+
+                for(const [k, p] of Object.entries(supportPoints)) {
+                    const mult = coefs[k] * Math.pow((1 - t), supportPoints.length - 1 - k) * Math.pow(t, k);
+
+                    nextX += mult * p.x;
+                    nextY += mult * p.y;
+                }
+                console.log(t, incr)
+
+                points.push({x : nextX, y: nextY});
+            }
+            drawFromPoints(points, 2);
+        }
+
+        function handleButtonClick(event) {
+            drawBezierFromSupportPoints(supportPointsPositions);
+        }
 
     </script>
     
