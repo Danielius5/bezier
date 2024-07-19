@@ -22,7 +22,7 @@
 <body>    
     <div id="wrapper">
         <button onclick="handleButtonClick(event)">Draw Bezier</button>
-        <canvas id="canvas" onclick="handleOnCanvasClick(event)">
+        <canvas id="canvas" onmousedown="handleOnMouseDown(event)" onmouseup="handleOnMouseUp(event)">
         Your browser does not support the canvas tag.
         </canvas>
     </div>
@@ -30,6 +30,7 @@
         const c = document.getElementById("canvas");
         const canvasWrapperRect = document.getElementById('wrapper').getBoundingClientRect();
         const ctx = c.getContext("2d");
+        const CIRCLE_WIDENESS = 10;
         c.height  = canvasWrapperRect.height;
         c.width  = canvasWrapperRect.width;
 
@@ -37,6 +38,10 @@
         ctx.fillStyle = "#000000";
 
         let supportPointsPositions = [];
+        let mouseMoved = false;
+
+        let currentlyDragged = null;
+
 
         function drawFromPoints(points, thickness = 1, color = "#000") {
             for(const point of points) {
@@ -85,23 +90,74 @@
             }
         }
 
-        function handleOnCanvasClick(e) {
-            const newP = {x : e.x, y : e.y};
-            try{
-                const prevP = supportPointsPositions.at(-1);
-                drawBezierFromSupportPoints([newP, prevP], 0.5, "#a00", false);
-                // redraw so line is not on top of point
-                drawCircle(ctx, prevP.x, prevP.y, 10, "#000000")
+        function getPointByPosition(points, x, y) {
+            // incorrect, good enough for now
+            return points.findIndex((p) => Math.abs(p.x - x) + Math.abs(p.y - y) < CIRCLE_WIDENESS * 3)
+        }
+        
+        function redrawEverything() {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
 
-            } catch {}
-            drawCircle(ctx, e.x, e.y, 10, "#000000")
-            supportPointsPositions.push(newP)
+            let i = 1;
+            do {
+                drawSupportPointAndLine(supportPointsPositions[i - 1], supportPointsPositions[i]);
+                i++;
+            } while(i < supportPointsPositions.length)
+
+            drawBezierFromSupportPoints(supportPointsPositions, 2, "#000", false);
+        }
+        function handleMouseMove(e) {
+
+            if(currentlyDragged != -1) {
+                mouseMoved = true;
+                const p = supportPointsPositions[currentlyDragged];
+
+
+                p.x = e.x;
+                p.y = e.y;
+                
+                redrawEverything();
+            }
+        }
+
+        function handleOnMouseDown(e) {
+            mouseMoved = false;
+            currentlyDragged = null;
+
+            currentlyDragged = getPointByPosition(supportPointsPositions, e.x, e.y);
+
+            document.getElementById("canvas").addEventListener("mousemove", handleMouseMove)
+        }
+
+        function drawSupportPointAndLine(newP, prevP) {
+                try{
+                    drawBezierFromSupportPoints([newP, prevP], 0.5, "#a00", false);
+                    // redraw so line is not on top of point
+                    drawCircle(ctx, prevP.x, prevP.y, CIRCLE_WIDENESS, "#000000")
+
+                } catch {}
+                drawCircle(ctx, newP.x, newP.y, CIRCLE_WIDENESS, "#000000")
+        }
+
+        function handleOnMouseUp(e) {
+            document.getElementById("canvas").removeEventListener("mousemove", handleMouseMove)
+
+            if (!mouseMoved) {
+                const prevP = supportPointsPositions.at(-1);
+                const newP = {x : e.x, y : e.y};
+
+                supportPointsPositions.push(newP);
+
+                redrawEverything();
+
+            }
         }
 
         function getBinomialCoefs(n) {
-            if (n == 2) {
-                return [1, 1]
+            if (n <= 1) {
+                return [1]
             }
+
             const prev = getBinomialCoefs(n - 1);
 
             let nex = [1];
