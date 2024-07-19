@@ -33,17 +33,17 @@
         c.height  = canvasWrapperRect.height;
         c.width  = canvasWrapperRect.width;
 
-        // drawBezierLine({x : 295, y: 153}, {x : 297, y : 443})
         ctx.strokeStyle = "#000000";
         ctx.fillStyle = "#000000";
 
         let supportPointsPositions = [];
 
-        function drawFromPoints(points, thickness = 1) {
+        function drawFromPoints(points, thickness = 1, color = "#000") {
             for(const point of points) {
-                drawCircle(ctx, point.x, point.y, thickness, "#000000");
+                drawCircle(ctx, point.x, point.y, thickness, color);
             }
         }
+
         function drawCircle(ctx, x, y, radius, fill, stroke, strokeWidth) {
             ctx.beginPath()
             ctx.arc(x, y, radius, 0, 2 * Math.PI, false)
@@ -58,49 +58,16 @@
             }
         }
 
-        function approxEqual(n, m) {
-            return Math.abs(n - m) < 1; // what if never equal??
-        }
-
-        function euclideanDist(p1, p2) {
-            const diffX = Math.abs(p1.x - p2.x)
-            const diffY = Math.abs(p1.y - p2.y)
-
-            return Math.sqrt(Math.pow(diffX, 2) + Math.pow(diffY, 2));
-        }
-
-        // t = 1 / longest distance between points
-        function drawBezierLine(p1, p2) {
-            if (p1 == undefined || p2 == undefined) {
-                return;
-            }
-            const diffX = p2.x - p1.x;
-            const diffY = p2.y - p1.y;
-            const maxDiff = Math.max(Math.abs(diffX), Math.abs(diffY));
-
-            const incX = diffX / maxDiff;
-            const incY = diffY / maxDiff;
-
-            let p = {x : p1.x, y: p1.y}
-            let points = [];
-            let i = 0; // get rid of this
-
-            while(!approxEqual(euclideanDist(p, p2), 0) && i < 500000) {
-                points.push({x: p.x, y: p.y});
-                p.x += incX;
-                p.y += incY;
-                i++;
-            }
-            
-            console.log(points)
-            drawFromPoints(points);
-        }
-
         function handleOnCanvasClick(e) {
-            drawCircle(ctx, e.x, e.y, 10, "#000000")
             const newP = {x : e.x, y : e.y};
-            drawBezierLine(newP, supportPointsPositions.at(-1));
+            try{
+                const prevP = supportPointsPositions.at(-1);
+                drawBezierFromSupportPoints([newP, prevP], 0.5, "#a00");
+                // redraw so line is not on top of point
+                drawCircle(ctx, prevP.x, prevP.y, 10, "#000000")
 
+            } catch {}
+            drawCircle(ctx, e.x, e.y, 10, "#000000")
             supportPointsPositions.push(newP)
         }
 
@@ -120,7 +87,7 @@
 
         }
 
-        function drawBezierFromSupportPoints(supportPoints) {
+        function drawBezierFromSupportPoints(supportPoints, thickness = 2, color="#000") {
             if (supportPoints.length == 0) {
                 return;
             }
@@ -139,7 +106,7 @@
 
 
             let coefs = getBinomialCoefs(supportPoints.length)
-            console.log(coefs);
+
             let points = [];
 
 
@@ -153,11 +120,10 @@
                     nextX += mult * p.x;
                     nextY += mult * p.y;
                 }
-                console.log(t, incr)
 
                 points.push({x : nextX, y: nextY});
             }
-            drawFromPoints(points, 2);
+            drawFromPoints(points, thickness, color);
         }
 
         function handleButtonClick(event) {
