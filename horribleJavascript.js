@@ -79,7 +79,7 @@ function redrawEverything() {
 
     drawBezierFromSupportPoints(supportPointsPositions, 2, "#000", false);
 }
-function handleMouseMove(e) {
+function handleOnPointerMove(e) {
 
     if (currentlyDragged != -1) {
         mouseMoved = true;
@@ -93,13 +93,13 @@ function handleMouseMove(e) {
     }
 }
 
-function handleOnMouseDown(e) {
+function handleOnPointerDown(e) {
     mouseMoved = false;
     currentlyDragged = null;
 
     currentlyDragged = getPointByPosition(supportPointsPositions, e.x, e.y);
 
-    document.getElementById("canvas").addEventListener("mousemove", handleMouseMove)
+    document.getElementById("canvas").addEventListener("pointermove", handleOnPointerMove)
 }
 
 function drawSupportPointAndLine(newP, prevP) {
@@ -112,8 +112,8 @@ function drawSupportPointAndLine(newP, prevP) {
     drawCircle(ctx, newP.x, newP.y, CIRCLE_WIDENESS, "#000000")
 }
 
-function handleOnMouseUp(e) {
-    document.getElementById("canvas").removeEventListener("mousemove", handleMouseMove)
+function handleOnPointerUp(e) {
+    document.getElementById("canvas").removeEventListener("pointermove", handleOnPointerMove)
 
     if (!mouseMoved) {
         const prevP = supportPointsPositions.at(-1);
